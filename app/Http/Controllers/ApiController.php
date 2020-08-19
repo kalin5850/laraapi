@@ -51,6 +51,13 @@ class ApiController extends Controller
                 ->header('Content-Type', 'application/json');
         }
         $var = $request->post();
+        if (!count($var)) {
+            return response('No Content', 204)
+                ->header('Content-Type', 'application/json');
+        } elseif (!isset($var['name']) || !isset($var['course'])) {
+            return response('No Content', 204)
+                ->header('Content-Type', 'application/json');
+        }
 
         $student = new Student();
         $student->name = $request->name;
@@ -64,11 +71,47 @@ class ApiController extends Controller
 
     public function updateStudent(Request $request, $id)
     {
+        $isPut = $request->isMethod('PUT');
+        if (!$isPut) {
+            return response('Method Now Allowed', 405)
+                ->header('Content-Type', 'application/json');
+        }
 
+       if(Student::where('id', $id)->exists()) {
+           $student = Student::find($id);
+           $student->name = is_null($request->name) ? $student->name : $request->name;
+           $student->course = is_null($request->course) ? $student->course : $request->course;
+           $student->updated_at = time();
+           $student->save();
+
+           return response()->json([
+               "message" => "records updated successfully"
+           ], 200);
+       } else {
+           return response()->json([
+               "message" => "Student not found"
+           ], 404);
+       }
     }
 
-    public function deleteStudent($id)
+    public function deleteStudent(Request $request, $id)
     {
+        $isDelete = $request->isMethod('DELETE');
+        if (!$isDelete) {
+            return response('Method Now Allowed', 405)
+                ->header('Content-Type', 'application/json');
+        }
+        if(Student::where('id', $id)->exists()) {
+            $student = Student::find($id);
+            $student->delete();
 
+            return response()->json([
+                "message" => "records deleted"
+            ], 202);
+        } else {
+            return response()->json([
+                "message" => "Student not found"
+            ], 404);
+        }
     }
 }
